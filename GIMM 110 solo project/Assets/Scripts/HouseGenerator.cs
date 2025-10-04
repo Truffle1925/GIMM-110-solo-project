@@ -104,7 +104,7 @@ public class HouseGenerator : MonoBehaviour
             }
         }
 
-        // Step 6: Add doors between touching rooms
+        // Step 6: Add two-tile wide adjacent gaps only on interior walls between touching rooms
         for (int i = 0; i < rooms.Count; i++)
         {
             for (int j = i + 1; j < rooms.Count; j++)
@@ -113,14 +113,65 @@ public class HouseGenerator : MonoBehaviour
                 RectInt b = rooms[j];
                 if (a.Overlaps(b)) continue;
 
-                if (a.xMin <= b.xMax + 1 && a.xMax + 1 >= b.xMin &&
-                    a.yMin <= b.yMax + 1 && a.yMax + 1 >= b.yMin)
+                // Check for adjacency (rooms share a wall)
+                bool horizontal = false, vertical = false;
+                if (a.xMax == b.xMin - 1 || b.xMax == a.xMin - 1)
+                    vertical = true;
+                if (a.yMax == b.yMin - 1 || b.yMax == a.yMin - 1)
+                    horizontal = true;
+
+                List<Vector2Int> possibleGaps = new List<Vector2Int>();
+
+                if (vertical)
                 {
-                    Vector2Int pos = new Vector2Int(
-                        (int)((a.center.x + b.center.x) / 2f),
-                        (int)((a.center.y + b.center.y) / 2f)
-                    );
-                    map[pos.x, pos.y] = -2; // door
+                    // Find all vertical wall segments between a and b
+                    int wallX = (a.xMax == b.xMin - 1) ? a.xMax : b.xMax;
+                    int yStart = Mathf.Max(a.yMin, b.yMin);
+                    int yEnd = Mathf.Min(a.yMax, b.yMax);
+                    for (int y = yStart; y < yEnd - 1; y++)
+                    {
+                        // Both tiles must be wall and between two rooms
+                        if (map[wallX, y] == -1 && map[wallX, y + 1] == -1)
+                        {
+                            int roomA = (wallX > 0 && map[wallX - 1, y] > 0) ? map[wallX - 1, y] : 0;
+                            int roomB = (wallX < houseWidth - 1 && map[wallX + 1, y] > 0) ? map[wallX + 1, y] : 0;
+                            if ((roomA == i + 1 && roomB == j + 1) || (roomA == j + 1 && roomB == i + 1))
+                                possibleGaps.Add(new Vector2Int(wallX, y));
+                        }
+                    }
+                }
+                else if (horizontal)
+                {
+                    // Find all horizontal wall segments between a and b
+                    int wallY = (a.yMax == b.yMin - 1) ? a.yMax : b.yMax;
+                    int xStart = Mathf.Max(a.xMin, b.xMin);
+                    int xEnd = Mathf.Min(a.xMax, b.xMax);
+                    for (int x = xStart; x < xEnd - 1; x++)
+                    {
+                        if (map[x, wallY] == -1 && map[x + 1, wallY] == -1)
+                        {
+                            int roomA = (wallY > 0 && map[x, wallY - 1] > 0) ? map[x, wallY - 1] : 0;
+                            int roomB = (wallY < houseHeight - 1 && map[x, wallY + 1] > 0) ? map[x, wallY + 1] : 0;
+                            if ((roomA == i + 1 && roomB == j + 1) || (roomA == j + 1 && roomB == i + 1))
+                                possibleGaps.Add(new Vector2Int(x, wallY));
+                        }
+                    }
+                }
+
+                // Place a single two-tile wide gap at a random valid position
+                if (possibleGaps.Count > 0)
+                {
+                    Vector2Int gap = possibleGaps[Random.Range(0, possibleGaps.Count)];
+                    if (vertical)
+                    {
+                        map[gap.x, gap.y] = 0;
+                        map[gap.x, gap.y + 1] = 0;
+                    }
+                    else if (horizontal)
+                    {
+                        map[gap.x, gap.y] = 0;
+                        map[gap.x + 1, gap.y] = 0;
+                    }
                 }
             }
         }
@@ -148,6 +199,18 @@ public class HouseGenerator : MonoBehaviour
             map[pos.x, pos.y] = -3;
             spawnersPlaced++;
         }
+
+        // Ensure outer walls are solid
+        for (int x = 0; x < houseWidth; x++)
+        {
+            map[x, 0] = -1;
+            map[x, houseHeight - 1] = -1;
+        }
+        for (int y = 0; y < houseHeight; y++)
+        {
+            map[0, y] = -1;
+            map[houseWidth - 1, y] = -1;
+        }
     }
 
     void BuildMap()
@@ -168,10 +231,6 @@ public class HouseGenerator : MonoBehaviour
                 {
                     TemplateSet template = ClosestRoomTemplate(new Vector2Int(x, y));
                     Instantiate(template.wallPrefab, pos, Quaternion.identity, transform);
-                }
-                else if (val == -2)
-                {
-                    Instantiate(doorPrefab, pos, Quaternion.identity, transform);
                 }
                 else if (val == -3)
                 {

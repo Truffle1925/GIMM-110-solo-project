@@ -14,6 +14,13 @@ public class Bullet : MonoBehaviour
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+
+        // Force bullet above floor
+        SpriteRenderer sr = GetComponent<SpriteRenderer>();
+        if (sr != null)
+        {
+            sr.sortingOrder = 10; // higher number = on top
+        }
     }
 
     private void FixedUpdate()
