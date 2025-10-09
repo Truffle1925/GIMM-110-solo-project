@@ -11,9 +11,10 @@ GameObject:
   - component: {fileID: 8944711458797832539}
   - component: {fileID: 1739233710191580110}
   - component: {fileID: 3218632146869305930}
+  - component: {fileID: -626867119428775566}
   m_Layer: 0
   m_Name: Spawner Prefab
-  m_TagString: Wall
+  m_TagString: Spawner
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -107,3 +108,26 @@ MonoBehaviour:
   maxEnemies: 10
   randomizeSpawn: 0
   randomDelay: 1
+--- !u!114 &-626867119428775566
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3102538985936026152}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7fffe1ce206e01a4ba966dc341647fe1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spawners: []
+  waveText: {fileID: 0}
+  enemyTypes:
+  - prefab: {fileID: 7641745890619585399, guid: bf9d213ec11d1a344828e64a21dc7c40,
+      type: 3}
+    cost: 5
+    weight: 0.3
+  startingBudget: 10
+  budgetMultiplier: 1.5
+  waveCooldown: 30
+  spawnDelay: 0.5

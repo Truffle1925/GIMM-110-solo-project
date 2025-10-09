@@ -3,7 +3,7 @@ using UnityEngine;
 public class EnemyAI : MonoBehaviour
 {
     [Header("Movement Settings")]
-    public Transform player;
+    [SerializeField] private Transform player; // found by tag if not assigned in Inspector
     public float moveSpeed = 3f;
     public float minDistance = 3f;
     public float maxDistance = 6f;
@@ -29,6 +29,16 @@ public class EnemyAI : MonoBehaviour
     void Start()
     {
         currentHealth = maxHealth;
+
+        // If player wasn't assigned in the Inspector, try to find by tag
+        if (player == null)
+        {
+            GameObject playerGO = GameObject.FindWithTag("Player");
+            if (playerGO != null)
+                player = playerGO.transform;
+            else
+                Debug.LogWarning("EnemyAI: No GameObject with tag 'Player' found in the scene.");
+        }
     }
 
     void Update()
@@ -79,7 +89,7 @@ public class EnemyAI : MonoBehaviour
 
     void ShootPredicted()
     {
-        if (bulletPrefab != null && shootPoint != null)
+        if (bulletPrefab != null && shootPoint != null && player != null)
         {
             Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
             Vector3 targetPosition = player.position;

@@ -12,19 +12,19 @@ public class Spawner : MonoBehaviour
     private int enemiesSpawned = 0;
     private float nextSpawnTime = 0f;
 
-    void Start()
-    {
-        ScheduleNextSpawn();
-    }
+    //void Start()
+    //{
+    //    ScheduleNextSpawn();
+    //}
 
-    void Update()
-    {
-        if (Time.time >= nextSpawnTime)
-        {
-            SpawnEnemy();
-            ScheduleNextSpawn();
-        }
-    }
+    //void Update()
+    //{
+    //    if (Time.time >= nextSpawnTime)
+     //   {
+    //        SpawnEnemy();
+     //       ScheduleNextSpawn();
+     //   }
+   // }
 
     void SpawnEnemy()
     {

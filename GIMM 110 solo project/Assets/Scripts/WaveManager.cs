@@ -17,6 +17,7 @@ public class WaveManagerTMP : MonoBehaviour
     [Tooltip("All active Spawners in the scene. Leave empty to auto-detect.")]
     public List<Spawner> spawners = new List<Spawner>();
 
+    // Use the abstract TMP_Text so both TextMeshProUGUI (UI) and TextMeshPro (3D) can be assigned in the Inspector
     public TMP_Text waveText;              // TextMeshPro UI element (assign in Inspector)
 
     [Header("Enemy Settings")]
@@ -35,11 +36,22 @@ public class WaveManagerTMP : MonoBehaviour
 
     void Awake()
     {
-        // Auto-detect all spawners in the scene if none are manually assigned
+        // Auto-detect all spawners in the scene if none are manually assigned,
+        // but exclude any Spawner that is attached to the same GameObject as this WaveManager.
         if (spawners.Count == 0)
         {
-            spawners.AddRange(FindObjectsOfType<Spawner>());
-            Debug.Log($"WaveManager found {spawners.Count} spawners automatically.");
+#if UNITY_2023_2_OR_NEWER
+            var found = Object.FindObjectsByType<Spawner>(FindObjectsSortMode.None);
+#else
+            var found = FindObjectsOfType<Spawner>();
+#endif
+            foreach (var s in found)
+            {
+                if (s == null) continue;
+                if (s.gameObject == this.gameObject) continue; // exclude self
+                spawners.Add(s);
+            }
+            Debug.Log($"WaveManager found {spawners.Count} spawners automatically (self excluded).");
         }
     }
 
@@ -73,6 +85,9 @@ public class WaveManagerTMP : MonoBehaviour
 
     void StartNextWave()
     {
+        // prevent starting another wave while one is already in progress (uses waveInProgress)
+        if (waveInProgress) return;
+
         currentWave++;
         currentBudget = Mathf.RoundToInt(startingBudget * Mathf.Pow(budgetMultiplier, currentWave - 1));
         Debug.Log($"Starting Wave {currentWave} with budget {currentBudget}");
@@ -90,19 +105,24 @@ public class WaveManagerTMP : MonoBehaviour
         while (currentBudget > 0)
         {
             if (enemyTypes.Count == 0 || spawners.Count == 0)
-                yield break;
+                break;
 
-            // Choose random enemy and spawner
+            // Choose random enemy and a valid spawner (not the GameObject this script is attached to)
             EnemyType chosenEnemy = ChooseEnemyType();
             if (chosenEnemy == null || chosenEnemy.prefab == null)
-                yield break;
+                break;
 
             if (chosenEnemy.cost > currentBudget)
                 break;
 
-            Spawner chosenSpawner = spawners[Random.Range(0, spawners.Count)];
+            Spawner chosenSpawner = GetRandomValidSpawner();
+            if (chosenSpawner == null)
+            {
+                Debug.LogWarning("No valid spawner available to spawn enemies.");
+                break;
+            }
 
-            // Spawn enemy
+            // Spawn enemy at the chosen spawner's transform
             GameObject newEnemy = Instantiate(chosenEnemy.prefab, chosenSpawner.transform.position, chosenSpawner.transform.rotation);
             currentBudget -= chosenEnemy.cost;
 
@@ -115,6 +135,14 @@ public class WaveManagerTMP : MonoBehaviour
         }
 
         waveInProgress = false;
+    }
+
+    // Helper: returns a random spawner that is not on the same GameObject as this manager
+    Spawner GetRandomValidSpawner()
+    {
+        var valid = spawners.FindAll(s => s != null && s.gameObject != this.gameObject);
+        if (valid.Count == 0) return null;
+        return valid[Random.Range(0, valid.Count)];
     }
 
     EnemyType ChooseEnemyType()
@@ -143,10 +171,6 @@ public class WaveManagerTMP : MonoBehaviour
     }
 }
 
-/// <summary>
-/// Helper that reports to WaveManager when an enemy dies.
-/// You can replace this with a call in your enemy's health script.
-/// </summary>
 public class EnemyDeathHandler : MonoBehaviour
 {
     public WaveManagerTMP manager;
