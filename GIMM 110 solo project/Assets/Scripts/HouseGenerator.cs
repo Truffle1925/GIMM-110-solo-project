@@ -86,19 +86,27 @@ public class HouseGenerator : MonoBehaviour
                 : sideRoomTemplates[Random.Range(0, sideRoomTemplates.Count)];
         }
 
-        // Step 5: Add walls around rooms
+        // Step 5: Add walls between different rooms and at the house boundary
         for (int x = 0; x < houseWidth; x++)
         {
             for (int y = 0; y < houseHeight; y++)
             {
-                if (map[x, y] == 0)
+                if (map[x, y] > 0) // This is a room tile
                 {
-                    if ((x > 0 && map[x - 1, y] > 0) ||
-                        (x < houseWidth - 1 && map[x + 1, y] > 0) ||
-                        (y > 0 && map[x, y - 1] > 0) ||
-                        (y < houseHeight - 1 && map[x, y + 1] > 0))
+                    // Check all 4 directions
+                    int[,] dirs = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
+                    for (int d = 0; d < 4; d++)
                     {
-                        map[x, y] = -1; // wall
+                        int nx = x + dirs[d, 0];
+                        int ny = y + dirs[d, 1];
+                        // If out of bounds or neighbor is not the same room, place a wall
+                        if (nx < 0 || nx >= houseWidth || ny < 0 || ny >= houseHeight || 
+                            (map[nx, ny] != map[x, y] && map[nx, ny] >= 0))
+                        {
+                            // Only place wall if the neighbor is not already a room
+                            if (nx >= 0 && nx < houseWidth && ny >= 0 && ny < houseHeight && map[nx, ny] == 0)
+                                map[nx, ny] = -1;
+                        }
                     }
                 }
             }
@@ -200,17 +208,7 @@ public class HouseGenerator : MonoBehaviour
             spawnersPlaced++;
         }
 
-        // Ensure outer walls are solid
-        for (int x = 0; x < houseWidth; x++)
-        {
-            map[x, 0] = -1;
-            map[x, houseHeight - 1] = -1;
-        }
-        for (int y = 0; y < houseHeight; y++)
-        {
-            map[0, y] = -1;
-            map[houseWidth - 1, y] = -1;
-        }
+
     }
 
     void BuildMap()

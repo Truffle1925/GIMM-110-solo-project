@@ -98,9 +98,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 3102538985936026152}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 81ee57c5c864ffd448ce83f57071c093, type: 3}
+  m_Script: {fileID: 11500000, guid: 264088505c864fb4ab9cc4d93a898d45, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   enemyPrefab: {fileID: 7641745890619585399, guid: bf9d213ec11d1a344828e64a21dc7c40,
     type: 3}
   spawnInterval: 2
+  maxEnemies: 10
+  randomizeSpawn: 0
+  randomDelay: 1

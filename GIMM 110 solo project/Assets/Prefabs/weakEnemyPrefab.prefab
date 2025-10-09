@@ -12,10 +12,10 @@ GameObject:
   - component: {fileID: 2184788416314314763}
   - component: {fileID: 3404259490774746993}
   - component: {fileID: 8595881668602769407}
-  - component: {fileID: 8205628991203216213}
   - component: {fileID: 4115842517187992573}
+  - component: {fileID: -2428761650262613003}
   m_Layer: 0
-  m_Name: Enemy
+  m_Name: weakEnemyPrefab
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -164,32 +164,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 0
---- !u!114 &8205628991203216213
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7641745890619585399}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b0d3cc731e6499248b28e50b499a03d4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  player: {fileID: 0}
-  moveSpeed: 10
-  minDistance: 3
-  maxDistance: 6
-  strafeSpeed: 10
-  strafeChangeInterval: 2
-  strafeWiggleAmount: 0.5
-  bulletPrefab: {fileID: 3543129328570959070, guid: c8bf9ba1c747487419fb7ed689ea07de,
-    type: 3}
-  shootPoint: {fileID: 7953012436497029041}
-  shootCooldown: 2
-  bulletSpeed: 10
-  bulletDamage: 1
-  maxHealth: 10
 --- !u!61 &4115842517187992573
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -236,3 +210,29 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!114 &-2428761650262613003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7641745890619585399}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0d3cc731e6499248b28e50b499a03d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  player: {fileID: 0}
+  moveSpeed: 3
+  minDistance: 3
+  maxDistance: 6
+  strafeSpeed: 3
+  strafeChangeInterval: 1.5
+  strafeWiggleAmount: 0.5
+  bulletPrefab: {fileID: 3543129328570959070, guid: c8bf9ba1c747487419fb7ed689ea07de,
+    type: 3}
+  shootPoint: {fileID: 7953012436497029041}
+  shootCooldown: 2
+  bulletSpeed: 10
+  bulletDamage: 1
+  maxHealth: 3
