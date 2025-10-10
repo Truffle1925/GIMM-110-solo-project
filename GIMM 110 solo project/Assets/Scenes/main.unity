@@ -167,6 +167,7 @@ GameObject:
   - component: {fileID: 111543495}
   - component: {fileID: 111543496}
   - component: {fileID: 111543497}
+  - component: {fileID: 111543498}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -189,7 +190,10 @@ MonoBehaviour:
   bulletPrefab: {fileID: 3543129328570959070, guid: c8bf9ba1c747487419fb7ed689ea07de,
     type: 3}
   firingPoint: {fileID: 603097327}
-  bulletContainer: {fileID: 528533474}
+  bulletContainer: {fileID: 528533475}
+  fireCooldown: 0
+  bulletSpeedOverride: 0
+  bulletDamageOverride: 0
 --- !u!114 &111543492
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -203,6 +207,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 10
+  dashSpeed: 25
+  dashDuration: 0.15
+  dashCooldown: 0.5
+  primaryShoot: {fileID: 0}
+  secondaryShoot: {fileID: 0}
 --- !u!212 &111543493
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -364,6 +373,19 @@ MonoBehaviour:
   currentHealth: 0
   healthSlider: {fileID: 1936621982}
   healthFillImage: {fileID: 926733171}
+--- !u!114 &111543498
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 111543490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84f5d6c00314e134a943af03ba2e14a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dashKey: 32
 --- !u!850595691 &166460477
 LightingSettings:
   m_ObjectHideFlags: 0

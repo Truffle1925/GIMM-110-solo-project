@@ -1,39 +1,37 @@
-    using UnityEngine;
+using UnityEngine;
 
 /// <summary>
-/// Copy of Bullet specifically for enemy projectiles.
-/// Damages the player on hit and otherwise behaves identically to Bullet.
+/// Enemy projectile: constant velocity set once on spawn, deals damage to player on hit,
+/// and is destroyed when hitting walls or other obstacles.
 /// </summary>
 public class EnemyBullet : MonoBehaviour
 {
     [SerializeField] private int damage = 1;
-    [SerializeField] private float speed = 100f;
-    Rigidbody2D rb;
+    [SerializeField] private float speed = 20f;
+    private Rigidbody2D rb;
 
     private void Awake()
     {
-        Destroy(gameObject, 2f);
+        // Lifetime safeguard
+        Destroy(gameObject, 5f);
     }
 
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
 
-        // Force bullet above floor
+        // Ensure bullet sprite renders above floor if present
         SpriteRenderer sr = GetComponent<SpriteRenderer>();
         if (sr != null)
-        {
             sr.sortingOrder = 10;
-        }
 
+        // Set initial velocity once and never change it afterwards
         if (rb != null)
             rb.linearVelocity = transform.up * speed;
     }
 
-    private void FixedUpdate()
-    {
-        // Keep physics-driven movement only.
-    }
+    // Intentionally empty so the bullet keeps the initial velocity set in Start()
+    private void FixedUpdate() { }
 
     public void SetDamage(int newDamage)
     {
@@ -50,10 +48,9 @@ public class EnemyBullet : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        // Hurt the player and destroy the bullet
+        // Damage player and destroy bullet
         if (collision.CompareTag("Player"))
         {
-            // If your player health script uses a different API, change this accordingly.
             var ph = collision.GetComponent<PlayerHealth>();
             if (ph != null)
             {
@@ -61,10 +58,21 @@ public class EnemyBullet : MonoBehaviour
             }
 
             Destroy(gameObject);
+            return;
         }
-        else if (collision.CompareTag("Wall") || collision.CompareTag("Enemy"))
+
+        // Destroy on hitting walls or other obstacles
+        if (collision.CompareTag("Wall") || collision.CompareTag("Obstacle") || collision.CompareTag("Environment"))
         {
             Destroy(gameObject);
+            return;
+        }
+
+        // Destroy on hitting other entities as needed
+        if (collision.CompareTag("Bullet") || collision.CompareTag("Enemy"))
+        {
+            Destroy(gameObject);
+            return;
         }
     }
 }

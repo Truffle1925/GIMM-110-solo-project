@@ -3,34 +3,33 @@
 public class Bullet : MonoBehaviour
 {
     [SerializeField] private int damage = 1;
-    [SerializeField] private float speed = 100f;
+    [SerializeField] private float speed = 20f;
     Rigidbody2D rb;
 
     private void Awake()
     {
-        Destroy(gameObject, 2f);
+        // self-destruct after a short lifetime
+        Destroy(gameObject, 5f);
     }
 
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
 
-        // Force bullet above floor
+        // ensure sprite is rendered above floor if present
         SpriteRenderer sr = GetComponent<SpriteRenderer>();
         if (sr != null)
-        {
-            sr.sortingOrder = 10; // higher number = on top
-        }
+            sr.sortingOrder = 10;
 
-        // Set initial velocity once and never change it again.
+        // set initial velocity based on current rotation (transform.up)
         if (rb != null)
             rb.linearVelocity = transform.up * speed;
     }
 
+    // Do not move the bullet in FixedUpdate manually - rely on Rigidbody2D velocity set once
     private void FixedUpdate()
     {
-        // Physics moves the bullet via Rigidbody2D.velocity set in Start().
-        // Do NOT change transform or rotation here so angle/velocity remain constant.
+        // Intentionally empty to keep bullet velocity constant after spawn.
     }
 
     public void SetDamage(int newDamage)
@@ -38,7 +37,7 @@ public class Bullet : MonoBehaviour
         damage = newDamage;
     }
 
-    // Allow the shooter to override speed at spawn
+    // Allows shooters to override speed immediately after Instantiate.
     public void SetSpeed(float newSpeed)
     {
         speed = newSpeed;
@@ -49,9 +48,8 @@ public class Bullet : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        // Don't damage player from this bullet (player-hurt removed by request).
-        // Destroy when hitting walls or enemies or other appropriate things.
-        if (collision.CompareTag("Wall") || collision.CompareTag("Enemy"))
+        // Destroy on hitting walls or other obstacles; do NOT damage the player from player bullets.
+        if (collision.CompareTag("Wall") || collision.CompareTag("Enemy") || collision.CompareTag("Obstacle"))
         {
             Destroy(gameObject);
         }

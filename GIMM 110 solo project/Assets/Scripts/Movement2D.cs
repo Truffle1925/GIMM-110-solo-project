@@ -2,18 +2,26 @@
 
 public class Movement2D : MonoBehaviour
 {
-    // Regions help to visually organize your code into sections.
     #region Variables
-    // Headers are like titles for the Unity Inspector.
     [Header("Movement Settings")]
-
-    /* In C# if you do not specify a variable modifier (i.e. public, private, protected), it defaults to private
-    The private variable modifier stops other scripts from accessing those variables */
     Rigidbody2D rb;
     Vector2 movement;
 
     // SerializeField allows you to see private variables in the inspector while keeping them private
     [SerializeField] float moveSpeed = 10f; // f is used to specify that the number is a float
+
+    [Header("Dash Settings")]
+    [Tooltip("Dash speed in units/sec")]
+    [SerializeField] float dashSpeed = 25f;
+    [Tooltip("How long the dash lasts (seconds)")]
+    [SerializeField] float dashDuration = 0.15f;
+    [Tooltip("Cooldown after a dash (seconds)")]
+    [SerializeField] float dashCooldown = 1.0f;
+
+    private bool isDashing = false;
+    private float dashTimer = 0f;
+    private float dashCooldownTimer = 0f;
+    private Vector2 dashDirection = Vector2.zero;
 
     [Header("Weapon Switching")]
     [Tooltip("Assign your primary Shoot component (player GameObject)")]
@@ -25,87 +33,79 @@ public class Movement2D : MonoBehaviour
     #endregion // Marks the end of the region
 
     #region Unity Methods
-    // Start is called before the first frame update
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-
-        // Initialize weapon states
         UpdateWeaponState();
     }
 
-    // Update is called once per frame
     private void Update()
     {
-        // Calls the PlayerInput method on every frame
+        // Read input each frame (used for normal movement)
         PlayerInput();
-        //new method to make the player face the mouse
         RotateTowardsMouse();
         HandleWeaponSwitchInput();
+
+        // Dash timers
+        if (dashTimer > 0f)
+        {
+            dashTimer -= Time.deltaTime;
+            if (dashTimer <= 0f)
+                EndDash();
+        }
+
+        if (dashCooldownTimer > 0f)
+            dashCooldownTimer -= Time.deltaTime;
     }
 
-    // FixedUpdate is used for physics calculations and is called 50 times a second
     private void FixedUpdate()
     {
-        // You don't need to multiply the movement by Time.deltaTime because the physics calculations are already frame-rate independent
-        rb.linearVelocity = movement * moveSpeed;
+        if (isDashing)
+        {
+            rb.linearVelocity = dashDirection * dashSpeed;        
+        }
+        else
+        {
+            rb.linearVelocity = movement * moveSpeed;
+        }
     }
     #endregion
 
     #region Custom Methods
-    /// <summary>
-    /// Handles player input
-    /// </summary>
     private void PlayerInput()
     {
-        //movement = new Vector2(0f, Input.GetAxis("Vertical")); // Gets the vertical input
-        //old script
-    
         float moveX = Input.GetAxis("Horizontal"); // A/D or Left/Right arrow
         float moveY = Input.GetAxis("Vertical");   // W/S or Up/Down arrow
         movement = new Vector2(moveX, moveY);
-    
-
     }
-    //new method to force the player to always face the location of the mouse
+
     private void RotateTowardsMouse()
     {
-        // Get mouse position in world space
+        if (Camera.main == null) return;
         Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-
-        // Direction from player to mouse
         Vector2 direction = (mousePos - transform.position).normalized;
-
-        // Calculate angle in degrees
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-
-        // Apply rotation (subtract 90 if your sprite points up by default)
         transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle - 90));
     }
 
     private void HandleWeaponSwitchInput()
     {
-        // Scroll wheel cycle
         float scroll = Input.GetAxis("Mouse ScrollWheel");
         if (scroll > 0f)
         {
             selectedWeapon = (selectedWeapon + 1) % 2;
             UpdateWeaponState();
-            Debug.Log("Scroll up detected");    
         }
         else if (scroll < 0f)
         {
             selectedWeapon = (selectedWeapon - 1 + 2) % 2;
             UpdateWeaponState();
-            Debug.Log("Scroll down detected");
         }
 
-        // Number keys
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
             selectedWeapon = 0;
             UpdateWeaponState();
-            Debug.Log("1 key detected");
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2))
         {
@@ -119,6 +119,52 @@ public class Movement2D : MonoBehaviour
     {
         if (primaryShoot != null) primaryShoot.enabled = (selectedWeapon == 0);
         if (secondaryShoot != null) secondaryShoot.enabled = (selectedWeapon == 1);
+    }
+
+    /// <summary>
+    /// Start a dash; dash direction is taken from current input axes (allows dashing in any direction).
+    /// If there is no input, dash will use the player's facing direction (transform.up).
+    /// Returns true if dash started, false if dash was on cooldown or already active.
+    /// </summary>
+    public bool TryStartDash()
+    {
+        if (isDashing) return false;
+        if (dashCooldownTimer > 0f) return false;
+
+        // Prefer raw input so dash direction isn't dependent on update ordering
+        float inputX = Input.GetAxisRaw("Horizontal");
+        float inputY = Input.GetAxisRaw("Vertical");
+        Vector2 input = new Vector2(inputX, inputY);
+
+        if (input.sqrMagnitude > 0.0001f)
+            dashDirection = input.normalized;
+        else
+            dashDirection = (Vector2)transform.up;
+
+        StartDash();
+        return true;
+    }
+
+    private void StartDash()
+    {
+        isDashing = true;
+        dashTimer = dashDuration;
+        dashCooldownTimer = dashCooldown;
+    }
+
+    private void EndDash()
+    {
+        isDashing = false;
+        dashTimer = 0f;
+        // normal movement will resume automatically in FixedUpdate
+    }
+
+    /// <summary>
+    /// Returns true when dash is available to start (not currently dashing and not on cooldown).
+    /// </summary>
+    public bool CanDash()
+    {
+        return !isDashing && dashCooldownTimer <= 0f;
     }
     #endregion
 }
