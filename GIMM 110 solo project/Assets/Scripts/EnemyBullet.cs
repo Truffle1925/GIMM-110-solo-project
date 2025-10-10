@@ -1,6 +1,10 @@
-﻿using UnityEngine;
+    using UnityEngine;
 
-public class Bullet : MonoBehaviour
+/// <summary>
+/// Copy of Bullet specifically for enemy projectiles.
+/// Damages the player on hit and otherwise behaves identically to Bullet.
+/// </summary>
+public class EnemyBullet : MonoBehaviour
 {
     [SerializeField] private int damage = 1;
     [SerializeField] private float speed = 100f;
@@ -19,18 +23,16 @@ public class Bullet : MonoBehaviour
         SpriteRenderer sr = GetComponent<SpriteRenderer>();
         if (sr != null)
         {
-            sr.sortingOrder = 10; // higher number = on top
+            sr.sortingOrder = 10;
         }
 
-        // Set initial velocity once and never change it again.
         if (rb != null)
             rb.linearVelocity = transform.up * speed;
     }
 
     private void FixedUpdate()
     {
-        // Physics moves the bullet via Rigidbody2D.velocity set in Start().
-        // Do NOT change transform or rotation here so angle/velocity remain constant.
+        // Keep physics-driven movement only.
     }
 
     public void SetDamage(int newDamage)
@@ -38,7 +40,6 @@ public class Bullet : MonoBehaviour
         damage = newDamage;
     }
 
-    // Allow the shooter to override speed at spawn
     public void SetSpeed(float newSpeed)
     {
         speed = newSpeed;
@@ -49,12 +50,21 @@ public class Bullet : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        // Don't damage player from this bullet (player-hurt removed by request).
-        // Destroy when hitting walls or enemies or other appropriate things.
-        if (collision.CompareTag("Wall") || collision.CompareTag("Enemy"))
+        // Hurt the player and destroy the bullet
+        if (collision.CompareTag("Player"))
+        {
+            // If your player health script uses a different API, change this accordingly.
+            var ph = collision.GetComponent<PlayerHealth>();
+            if (ph != null)
+            {
+                ph.TakeDamage(damage);
+            }
+
+            Destroy(gameObject);
+        }
+        else if (collision.CompareTag("Wall") || collision.CompareTag("Enemy"))
         {
             Destroy(gameObject);
         }
     }
 }
-

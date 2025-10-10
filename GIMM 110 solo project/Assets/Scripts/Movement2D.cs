@@ -14,6 +14,14 @@ public class Movement2D : MonoBehaviour
 
     // SerializeField allows you to see private variables in the inspector while keeping them private
     [SerializeField] float moveSpeed = 10f; // f is used to specify that the number is a float
+
+    [Header("Weapon Switching")]
+    [Tooltip("Assign your primary Shoot component (player GameObject)")]
+    public Shoot primaryShoot;
+    [Tooltip("Assign your secondary Shoot component (player GameObject)")]
+    public ShootAlternate secondaryShoot;
+
+    private int selectedWeapon = 0; // 0 = primary, 1 = secondary
     #endregion // Marks the end of the region
 
     #region Unity Methods
@@ -21,6 +29,9 @@ public class Movement2D : MonoBehaviour
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+
+        // Initialize weapon states
+        UpdateWeaponState();
     }
 
     // Update is called once per frame
@@ -30,6 +41,7 @@ public class Movement2D : MonoBehaviour
         PlayerInput();
         //new method to make the player face the mouse
         RotateTowardsMouse();
+        HandleWeaponSwitchInput();
     }
 
     // FixedUpdate is used for physics calculations and is called 50 times a second
@@ -69,6 +81,44 @@ public class Movement2D : MonoBehaviour
 
         // Apply rotation (subtract 90 if your sprite points up by default)
         transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle - 90));
+    }
+
+    private void HandleWeaponSwitchInput()
+    {
+        // Scroll wheel cycle
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+        if (scroll > 0f)
+        {
+            selectedWeapon = (selectedWeapon + 1) % 2;
+            UpdateWeaponState();
+            Debug.Log("Scroll up detected");    
+        }
+        else if (scroll < 0f)
+        {
+            selectedWeapon = (selectedWeapon - 1 + 2) % 2;
+            UpdateWeaponState();
+            Debug.Log("Scroll down detected");
+        }
+
+        // Number keys
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            selectedWeapon = 0;
+            UpdateWeaponState();
+            Debug.Log("1 key detected");
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            selectedWeapon = 1;
+            UpdateWeaponState();
+            Debug.Log("2 key detected");
+        }
+    }
+
+    private void UpdateWeaponState()
+    {
+        if (primaryShoot != null) primaryShoot.enabled = (selectedWeapon == 0);
+        if (secondaryShoot != null) secondaryShoot.enabled = (selectedWeapon == 1);
     }
     #endregion
 }
