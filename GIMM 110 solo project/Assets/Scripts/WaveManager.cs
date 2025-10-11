@@ -69,7 +69,6 @@ public class WaveManagerTMP : MonoBehaviour
             // Wait before starting the next wave
             if (currentWave > 0)
             {
-                Debug.Log($"Wave {currentWave} complete! Next wave in {waveCooldown} seconds...");
                 if (waveText != null)
                     waveText.text = $"Next Wave In: {waveCooldown}s";
 
@@ -124,6 +123,7 @@ public class WaveManagerTMP : MonoBehaviour
 
             // Spawn enemy at the chosen spawner's transform
             GameObject newEnemy = Instantiate(chosenEnemy.prefab, chosenSpawner.transform.position, chosenSpawner.transform.rotation);
+            Debug.Log($"Spawned enemy '{newEnemy.name}' instanceID={newEnemy.GetInstanceID()} at {Time.time}", newEnemy);
             currentBudget -= chosenEnemy.cost;
 
             // Track enemy

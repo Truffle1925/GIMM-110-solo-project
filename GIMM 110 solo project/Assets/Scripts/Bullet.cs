@@ -15,6 +15,11 @@ public class Bullet : MonoBehaviour
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        if (rb == null)
+        {
+            Debug.LogWarning($"Bullet '{name}' has no Rigidbody2D — add one and set gravityScale=0.", this);
+            return;
+        }
 
         // ensure sprite is rendered above floor if present
         SpriteRenderer sr = GetComponent<SpriteRenderer>();
@@ -22,8 +27,7 @@ public class Bullet : MonoBehaviour
             sr.sortingOrder = 10;
 
         // set initial velocity based on current rotation (transform.up)
-        if (rb != null)
-            rb.linearVelocity = transform.up * speed;
+        rb.linearVelocity = transform.up * speed;
     }
 
     // Do not move the bullet in FixedUpdate manually - rely on Rigidbody2D velocity set once
@@ -44,12 +48,14 @@ public class Bullet : MonoBehaviour
         if (rb == null) rb = GetComponent<Rigidbody2D>();
         if (rb != null)
             rb.linearVelocity = transform.up * speed;
+        else
+            Debug.LogWarning($"Bullet '{name}': SetSpeed called but no Rigidbody2D found.", this);
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
         // Destroy on hitting walls or other obstacles; do NOT damage the player from player bullets.
-        if (collision.CompareTag("Wall") || collision.CompareTag("Enemy") || collision.CompareTag("Obstacle"))
+        if (collision.CompareTag("Wall") || collision.CompareTag("Enemy"))
         {
             Destroy(gameObject);
         }

@@ -229,6 +229,11 @@ MonoBehaviour:
   strafeSpeed: 3
   strafeChangeInterval: 1.5
   strafeWiggleAmount: 0.5
+  obstacleTag: Wall
+  avoidanceRadius: 0.2
+  detectionDistance: 1
+  avoidanceStrength: 4
+  velocitySmooth: 8
   bulletPrefab: {fileID: 6581637091761866149, guid: 3643c8cb4c2cd2c42a8246ef5cd48ef6,
     type: 3}
   shootPoint: {fileID: 7953012436497029041}

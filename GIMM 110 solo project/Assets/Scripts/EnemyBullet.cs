@@ -62,17 +62,11 @@ public class EnemyBullet : MonoBehaviour
         }
 
         // Destroy on hitting walls or other obstacles
-        if (collision.CompareTag("Wall") || collision.CompareTag("Obstacle") || collision.CompareTag("Environment"))
+        if (collision.CompareTag("Wall") || collision.CompareTag("Player"))
         {
             Destroy(gameObject);
             return;
         }
 
-        // Destroy on hitting other entities as needed
-        if (collision.CompareTag("Bullet") || collision.CompareTag("Enemy"))
-        {
-            Destroy(gameObject);
-            return;
-        }
     }
 }
