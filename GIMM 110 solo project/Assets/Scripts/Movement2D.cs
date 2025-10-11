@@ -3,6 +3,7 @@
 public class Movement2D : MonoBehaviour
 {
     #region Variables
+
     [Header("Movement Settings")]
     Rigidbody2D rb;
     Vector2 movement;
@@ -30,6 +31,9 @@ public class Movement2D : MonoBehaviour
     public ShootAlternate secondaryShoot;
 
     private int selectedWeapon = 0; // 0 = primary, 1 = secondary
+
+    private StyleManager styleManager;
+
     #endregion // Marks the end of the region
 
     #region Unity Methods
@@ -37,6 +41,7 @@ public class Movement2D : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         UpdateWeaponState();
+        styleManager = Object.FindFirstObjectByType<StyleManager>();
     }
 
     private void Update()
@@ -119,6 +124,11 @@ public class Movement2D : MonoBehaviour
     {
         if (primaryShoot != null) primaryShoot.enabled = (selectedWeapon == 0);
         if (secondaryShoot != null) secondaryShoot.enabled = (selectedWeapon == 1);
+
+
+        // Notify style system of weapon switch
+        if (styleManager != null)
+            styleManager.OnWeaponSwitch();
     }
 
     /// <summary>
@@ -150,6 +160,10 @@ public class Movement2D : MonoBehaviour
         isDashing = true;
         dashTimer = dashDuration;
         dashCooldownTimer = dashCooldown;
+
+        // Notify style system
+        if (styleManager != null)
+            styleManager.OnDodge();
     }
 
     private void EndDash()
@@ -165,6 +179,32 @@ public class Movement2D : MonoBehaviour
     public bool CanDash()
     {
         return !isDashing && dashCooldownTimer <= 0f;
+    }
+
+    // Called by pickups to assign a new bullet prefab to the secondary weapon slot.
+    // If no secondaryShoot is present it will add a ShootAlternate component.
+    public void AssignPickedWeapon(GameObject bulletPrefab)
+    {
+        if (bulletPrefab == null) return;
+
+        if (secondaryShoot != null)
+        {
+            secondaryShoot.bulletPrefab = bulletPrefab;
+            Debug.Log($"Assigned picked weapon to secondary slot: {bulletPrefab.name}");
+        }
+        else
+        {
+            // Add ShootAlternate dynamically to the player so it can be used as secondary
+            var added = gameObject.AddComponent<ShootAlternate>();
+            added.bulletPrefab = bulletPrefab;
+            added.firingPoint = primaryShoot != null ? primaryShoot.firingPoint : null;
+            secondaryShoot = added;
+            Debug.Log($"Added ShootAlternate and assigned picked weapon: {bulletPrefab.name}");
+        }
+
+        // Optionally switch to secondary immediately
+        selectedWeapon = 1;
+        UpdateWeaponState();
     }
     #endregion
 }

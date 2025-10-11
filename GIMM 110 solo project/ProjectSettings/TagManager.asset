@@ -9,6 +9,7 @@ TagManager:
   - Wall
   - Spawner
   - EnemyBullet
+  - StyleManager
   layers:
   - Default
   - TransparentFX

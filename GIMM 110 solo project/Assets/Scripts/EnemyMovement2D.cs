@@ -2,12 +2,24 @@ using UnityEngine;
 using System.Collections;
 
 [RequireComponent(typeof(Rigidbody2D))]
-public class FastEnemyAI : MonoBehaviour
+public class EnemyMovement2D : MonoBehaviour
 {
     [Header("References")]
     public Transform player;
     public GameObject bulletPrefab;
     public Transform shootPoint;
+
+    [Header("Drops")]
+    [Tooltip("Pickup prefab option A (e.g. weapon or ammo prefab).")]
+    public GameObject dropPrefabA;
+    [Tooltip("Pickup prefab option B (e.g. weapon or ammo prefab).")]
+    public GameObject dropPrefabB;
+    [Range(0f, 1f)]
+    [Tooltip("Chance (0-1) that this enemy will drop a pickup on death.")]
+    public float dropChance = 0.5f;
+    [Range(0f, 1f)]
+    [Tooltip("When a drop occurs, chance to pick A over B (0 = always B, 1 = always A).")]
+    public float dropAChance = 0.5f;
 
     [Header("Movement")]
     public float moveSpeed = 5f;
@@ -175,7 +187,17 @@ public class FastEnemyAI : MonoBehaviour
 
     void Die()
     {
-        // Add effects here (explosion, sound, etc.)
+        // chance to drop one of two pickup prefabs or nothing
+        if (Random.value < dropChance)
+        {
+            GameObject toDrop = (Random.value < dropAChance) ? dropPrefabA : dropPrefabB;
+            if (toDrop != null)
+                Instantiate(toDrop, transform.position, Quaternion.identity);
+        }
+
+        // report score/style before destroying
+        Object.FindFirstObjectByType<StyleManager>()?.OnKill(100);
+
         Destroy(gameObject);
     }
 

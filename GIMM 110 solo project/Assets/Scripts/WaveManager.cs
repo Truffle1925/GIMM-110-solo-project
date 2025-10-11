@@ -17,8 +17,11 @@ public class WaveManagerTMP : MonoBehaviour
     [Tooltip("All active Spawners in the scene. Leave empty to auto-detect.")]
     public List<Spawner> spawners = new List<Spawner>();
 
-    // Use the abstract TMP_Text so both TextMeshProUGUI (UI) and TextMeshPro (3D) can be assigned in the Inspector
-    public TMP_Text waveText;              // TextMeshPro UI element (assign in Inspector)
+    // Wave number UI (assign in Inspector)
+    public TMP_Text waveText;
+
+    // New: separate countdown UI element (assign in Inspector). Only shown between waves.
+    public TMP_Text countdownText;
 
     [Header("Enemy Settings")]
     public List<EnemyType> enemyTypes = new List<EnemyType>();
@@ -33,6 +36,12 @@ public class WaveManagerTMP : MonoBehaviour
     private int currentBudget;
     private readonly List<GameObject> activeEnemies = new List<GameObject>();
     private bool waveInProgress = false;
+
+    // Public read-only state for other systems to check whether we are in the between-waves countdown
+    public static bool IsBetweenWaves { get; private set; } = false;
+
+    // Tracks number spawned in the current wave (reset each wave)
+    private int spawnedThisWave = 0;
 
     void Awake()
     {
@@ -55,10 +64,52 @@ public class WaveManagerTMP : MonoBehaviour
         }
     }
 
+    // Start now defers initialization until spawners are present (or timeout)
     void Start()
     {
+        StartCoroutine(InitializeAndRun());
+    }
+
+    // Waits briefly for spawners to be assigned (inspector or runtime), then starts wave loop.
+    IEnumerator InitializeAndRun()
+    {
+        // small grace period to allow other systems to populate spawners (e.g. scene setup)
+        const float waitTimeout = 2f; // seconds to wait for spawners to appear
+        float waited = 0f;
+
+        // If none assigned, try to auto-detect repeatedly for up to timeout
+        while (spawners.Count == 0 && waited < waitTimeout)
+        {
+#if UNITY_2023_2_OR_NEWER
+            var found = Object.FindObjectsByType<Spawner>(FindObjectsSortMode.None);
+#else
+            var found = FindObjectsOfType<Spawner>();
+#endif
+            spawners.Clear();
+            foreach (var s in found)
+            {
+                if (s == null) continue;
+                if (s.gameObject == this.gameObject) continue;
+                spawners.Add(s);
+            }
+
+            if (spawners.Count > 0) break;
+
+            yield return null;
+            waited += Time.deltaTime;
+        }
+
+        if (spawners.Count == 0)
+            Debug.LogWarning("WaveManager: No spawners found after waiting. Assign spawners in Inspector or ensure they exist at start.");
+
+        // UI init (was previously in Start)
         if (waveText != null)
             waveText.text = "Wave 0";
+
+        if (countdownText != null)
+            countdownText.gameObject.SetActive(false);
+
+        // Start wave loop after ensuring we attempted auto-detect
         StartCoroutine(WaveLoop());
     }
 
@@ -66,26 +117,69 @@ public class WaveManagerTMP : MonoBehaviour
     {
         while (true)
         {
-            // Wait before starting the next wave
-            if (currentWave > 0)
-            {
-                if (waveText != null)
-                    waveText.text = $"Next Wave In: {waveCooldown}s";
+            // Always run the between-wave countdown BEFORE starting the next wave.
+            // This enforces the same 30s wait before the first wave and between waves,
+            // and ensures SpawnWave does not start until the countdown finishes.
+            yield return StartCoroutine(CountdownCoroutine(waveCooldown));
 
-                yield return new WaitForSeconds(waveCooldown);
-            }
-
+            // Start the next wave immediately after countdown finishes 
             StartNextWave();
 
-            // Wait until all enemies in this wave are dead
+            // Wait until spawn phase finishes (SpawnWave sets waveInProgress = false when done)
+            yield return new WaitUntil(() => waveInProgress == false);
+
+            // If no enemies were spawned this wave, log and run the countdown (no enemies to kill)
+            if (spawnedThisWave == 0)
+            {
+                Debug.Log("Wave completed with zero spawns. Starting countdown.");
+                yield return StartCoroutine(CountdownCoroutine(waveCooldown));
+                continue;
+            }
+
+            // Wait until all enemies spawned for this wave are dead
             yield return new WaitUntil(() => activeEnemies.Count == 0);
+
+            // After the wave is cleared, show countdown UI and wait the cooldown
+            yield return StartCoroutine(CountdownCoroutine(waveCooldown));
         }
+    }
+
+    IEnumerator CountdownCoroutine(float duration)
+    {
+        // mark between-waves state for other systems
+        IsBetweenWaves = true;
+
+        if (countdownText == null)
+        {
+            // fallback: just wait if no UI assigned, but still set the flag while waiting
+            yield return new WaitForSeconds(duration);
+            IsBetweenWaves = false;
+            yield break;
+        }
+
+        countdownText.gameObject.SetActive(true);
+        float remaining = duration;
+
+        // Update each frame for smooth/accurate countdown
+        while (remaining > 0f)
+        {
+            int seconds = Mathf.CeilToInt(remaining);
+            countdownText.text = $"Next Wave In: {seconds}s";
+            yield return null;
+            remaining -= Time.deltaTime;
+        }
+
+        countdownText.gameObject.SetActive(false);
+        IsBetweenWaves = false;
     }
 
     void StartNextWave()
     {
-        // prevent starting another wave while one is already in progress (uses waveInProgress)
+        // prevent starting another wave while one is already in progress
         if (waveInProgress) return;
+
+        // ensure we are not considered between waves when a wave starts
+        IsBetweenWaves = false;
 
         currentWave++;
         currentBudget = Mathf.RoundToInt(startingBudget * Mathf.Pow(budgetMultiplier, currentWave - 1));
@@ -100,19 +194,28 @@ public class WaveManagerTMP : MonoBehaviour
     IEnumerator SpawnWave()
     {
         waveInProgress = true;
+        spawnedThisWave = 0; // reset counter
 
         while (currentBudget > 0)
         {
             if (enemyTypes.Count == 0 || spawners.Count == 0)
+            {
+                Debug.LogWarning("SpawnWave aborted: no enemyTypes or no spawners assigned.");
                 break;
+            }
 
-            // Choose random enemy and a valid spawner (not the GameObject this script is attached to)
             EnemyType chosenEnemy = ChooseEnemyType();
             if (chosenEnemy == null || chosenEnemy.prefab == null)
+            {
+                Debug.LogWarning("SpawnWave aborted: chosen enemy invalid.");
                 break;
+            }
 
             if (chosenEnemy.cost > currentBudget)
+            {
+                // no affordable enemy left
                 break;
+            }
 
             Spawner chosenSpawner = GetRandomValidSpawner();
             if (chosenSpawner == null)
@@ -121,13 +224,13 @@ public class WaveManagerTMP : MonoBehaviour
                 break;
             }
 
-            // Spawn enemy at the chosen spawner's transform
             GameObject newEnemy = Instantiate(chosenEnemy.prefab, chosenSpawner.transform.position, chosenSpawner.transform.rotation);
             Debug.Log($"Spawned enemy '{newEnemy.name}' instanceID={newEnemy.GetInstanceID()} at {Time.time}", newEnemy);
             currentBudget -= chosenEnemy.cost;
 
             // Track enemy
             activeEnemies.Add(newEnemy);
+            spawnedThisWave++;
             EnemyDeathHandler deathHandler = newEnemy.AddComponent<EnemyDeathHandler>();
             deathHandler.manager = this;
 
