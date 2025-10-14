@@ -14,6 +14,12 @@ public class Shoot : MonoBehaviour
     [Tooltip("Optional container for organization. DO NOT make this a child of the player if you want bullets to keep their world rotation.")]
     public Transform bulletContainer;
 
+    [Header("Audio Settings")]
+    [Tooltip("Sound to play when the gun fires.")]
+    public AudioClip gunshotClip;
+    [Tooltip("AudioSource used to play gun sounds. If not assigned, one will be created at runtime.")]
+    public AudioSource audioSource;
+
     [Header("Gun Settings")]
     [Tooltip("If <= 0, fires once per button press. If > 0, allows automatic fire with this cooldown between shots.")]
     public float fireCooldown = 0f;
@@ -33,7 +39,15 @@ public class Shoot : MonoBehaviour
         // initialize ammo to max if configured and current not set
         if (maxAmmo > 0 && currentAmmo <= 0)
             currentAmmo = maxAmmo;
+
+        // ensure we have an AudioSource
+        if (audioSource == null && gunshotClip != null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+        }
     }
+
 
     void Update()
     {
@@ -111,6 +125,15 @@ public class Shoot : MonoBehaviour
             if (bulletDamageOverride > 0) eb.SetDamage(bulletDamageOverride);
             if (bulletSpeedOverride > 0f) eb.SetSpeed(bulletSpeedOverride);
         }
+        // Play gunshot sound
+        if (gunshotClip != null)
+        {
+            if (audioSource != null)
+                audioSource.PlayOneShot(gunshotClip);
+            else
+                AudioSource.PlayClipAtPoint(gunshotClip, firingPoint.position);
+        }
+
     }
 
     /// <summary>
