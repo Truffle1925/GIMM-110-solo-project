@@ -1,10 +1,12 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// Primary player gun. Adjustable variables exposed in the Inspector.
 /// Bullets are spawned unparented so they don't inherit player rotation after firing.
 /// Supports single-shot (fireCooldown <= 0) or automatic fire (fireCooldown > 0).
 /// Adds a simple ammo system: set maxAmmo <= 0 for infinite ammo.
+/// Now includes an optional UI Slider to display remaining ammo.
 /// </summary>
 public class Shoot : MonoBehaviour
 {
@@ -32,6 +34,10 @@ public class Shoot : MonoBehaviour
     [Tooltip("Current ammo count. If maxAmmo <= 0 this value is ignored.")]
     public int currentAmmo = 0;
 
+    [Header("UI")]
+    [Tooltip("Optional Slider to show remaining ammo. Leave empty if not needed.")]
+    public Slider ammoBar;
+
     float fireTimer = 0f;
 
     void Start()
@@ -46,8 +52,22 @@ public class Shoot : MonoBehaviour
             audioSource = gameObject.AddComponent<AudioSource>();
             audioSource.playOnAwake = false;
         }
+
+        UpdateAmmoUI();
     }
 
+    void OnEnable()
+    {
+        UpdateAmmoUI();
+        if (ammoBar != null)
+            ammoBar.gameObject.SetActive(true);
+    }
+
+    void OnDisable()
+    {
+        if (ammoBar != null)
+            ammoBar.gameObject.SetActive(false);
+    }
 
     void Update()
     {
@@ -93,7 +113,10 @@ public class Shoot : MonoBehaviour
 
         // consume ammo if applicable
         if (maxAmmo > 0)
+        {
             currentAmmo = Mathf.Max(0, currentAmmo - 1);
+            UpdateAmmoUI();
+        }
 
         // Get mouse position and compute direction
         Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -125,6 +148,7 @@ public class Shoot : MonoBehaviour
             if (bulletDamageOverride > 0) eb.SetDamage(bulletDamageOverride);
             if (bulletSpeedOverride > 0f) eb.SetSpeed(bulletSpeedOverride);
         }
+
         // Play gunshot sound
         if (gunshotClip != null)
         {
@@ -133,7 +157,6 @@ public class Shoot : MonoBehaviour
             else
                 AudioSource.PlayClipAtPoint(gunshotClip, firingPoint.position);
         }
-
     }
 
     /// <summary>
@@ -145,6 +168,25 @@ public class Shoot : MonoBehaviour
         if (maxAmmo <= 0 || amount <= 0) return 0;
         int before = currentAmmo;
         currentAmmo = Mathf.Clamp(currentAmmo + amount, 0, maxAmmo);
+        UpdateAmmoUI();
         return currentAmmo - before;
+    }
+
+    /// <summary>
+    /// Updates the UI ammo slider (if assigned).
+    /// </summary>
+    void UpdateAmmoUI()
+    {
+        if (ammoBar == null) return;
+
+        if (maxAmmo > 0)
+        {
+            ammoBar.maxValue = maxAmmo;
+            ammoBar.value = currentAmmo;
+        }
+        else
+        {
+            ammoBar.gameObject.SetActive(false);
+        }
     }
 }
