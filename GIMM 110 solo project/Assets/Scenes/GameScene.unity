@@ -381,6 +381,8 @@ GameObject:
   - component: {fileID: 111543498}
   - component: {fileID: 111543499}
   - component: {fileID: 111543500}
+  - component: {fileID: 111543502}
+  - component: {fileID: 111543501}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -728,6 +730,42 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &111543501
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 111543490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3dfb13bfa66938a4586671a01ac51222, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  attackRange: 1.5
+  attackDamage: 25
+  attackCooldown: 0.5
+  enemyTag: Enemy
+  attackPoint: {fileID: 603097327}
+  audioSource: {fileID: 0}
+  swingSound: {fileID: 0}
+  hitSound: {fileID: 0}
+--- !u!114 &111543502
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 111543490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a90d3ad0bc4002d4eb2768f1c2e60ae0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  weapons:
+  - {fileID: 111543491}
+  - {fileID: 111543499}
+  - {fileID: 111543501}
 --- !u!850595691 &166460477
 LightingSettings:
   m_ObjectHideFlags: 0

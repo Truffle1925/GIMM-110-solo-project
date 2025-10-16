@@ -14,6 +14,6 @@ public class introsceneswitcher : MonoBehaviour
 
     void OnVideoEnd(VideoPlayer vp)
     {
-        SceneManager.LoadScene("main");
+        SceneManager.LoadScene("MainMenu");
     }
 }
