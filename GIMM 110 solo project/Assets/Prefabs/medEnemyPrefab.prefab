@@ -11,8 +11,8 @@ GameObject:
   - component: {fileID: 9123536674319437553}
   - component: {fileID: 463850035558088646}
   - component: {fileID: 4789184842455477252}
-  - component: {fileID: 847162405702853833}
   - component: {fileID: 601122427659012821}
+  - component: {fileID: -3921807737263446450}
   m_Layer: 0
   m_Name: medEnemyPrefab
   m_TagString: Enemy
@@ -29,7 +29,7 @@ Transform:
   m_GameObject: {fileID: 1732430734461085933}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 539.5361, y: 243.03879, z: 0}
+  m_LocalPosition: {x: 539.5361, y: 243.03879, z: 10}
   m_LocalScale: {x: 0.2, y: 0.2, z: 0.2}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -118,44 +118,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
---- !u!114 &847162405702853833
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1732430734461085933}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b0d3cc731e6499248b28e50b499a03d4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  player: {fileID: 0}
-  bulletPrefab: {fileID: 6581637091761866149, guid: 3643c8cb4c2cd2c42a8246ef5cd48ef6,
-    type: 3}
-  shootPoint: {fileID: 9123536674319437553}
-  dropPrefabA: {fileID: 6067455575070520101, guid: 2ade7c82f58d05e4f8789728872646f6,
-    type: 3}
-  dropPrefabB: {fileID: 8274668105269345060, guid: 0ed00a840d56bb5459b8d2342bcf2a14,
-    type: 3}
-  dropChance: 0.5
-  dropAChance: 0.5
-  moveSpeed: 4
-  strafeSpeed: 3
-  strafeWiggleAmount: 0.5
-  minDistance: 4
-  maxDistance: 8
-  bulletSpeed: 8
-  minShootCooldown: 0.5
-  maxShootCooldown: 1.5
-  dashForce: 5
-  dashDuration: 0.2
-  dashCooldown: 4
-  maxHealth: 8
-  obstacleMask:
-    serializedVersion: 2
-    m_Bits: 2147483648
-  avoidanceStrength: 4
 --- !u!61 &601122427659012821
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -202,3 +164,44 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 6.9223022, y: 9.316254}
   m_EdgeRadius: 0
+--- !u!114 &-3921807737263446450
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1732430734461085933}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e54bb568eb02613498a81fae20769303, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveSpeed: 4
+  maxHealth: 8
+  player: {fileID: 0}
+  bulletPrefab: {fileID: 6581637091761866149, guid: 3643c8cb4c2cd2c42a8246ef5cd48ef6,
+    type: 3}
+  shootPoint: {fileID: 9123536674319437553}
+  bulletSpeed: 10
+  minShootCooldown: 0.5
+  maxShootCooldown: 1.5
+  strafeSpeed: 3
+  strafeWiggleAmount: 0.5
+  minDistance: 4
+  maxDistance: 8
+  dashForce: 5
+  dashDuration: 0.2
+  dashCooldown: 4
+  dropPrefabA: {fileID: 6067455575070520101, guid: 2ade7c82f58d05e4f8789728872646f6,
+    type: 3}
+  dropPrefabB: {fileID: 8274668105269345060, guid: 0ed00a840d56bb5459b8d2342bcf2a14,
+    type: 3}
+  dropPrefabC: {fileID: 35716584251781276, guid: 01397436b92021747bd3ece95bb50f72,
+    type: 3}
+  dropChance: 0.5
+  dropAChance: 0.5
+  dropCChance: 0.2
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 2147483648
+  avoidanceStrength: 5
