@@ -10,11 +10,15 @@ TagManager:
   - Spawner
   - EnemyBullet
   - StyleManager
+  - Doorway
+  - Floor
+  - WaypointManager
+  - RoomBounds
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Floor
   - Water
   - UI
   - 
