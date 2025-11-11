@@ -53,4 +53,13 @@ public class WaypointManager : MonoBehaviour
     }
 
     public List<GameObject> GetAllWaypoints() => allWaypoints;
+
+    public GameObject GetRoomRepresentativeWaypoint(Room room)
+    {
+        if (room == null || room.roomWaypoints.Count == 0) return null;
+        // Just pick the first waypoint for now
+        return room.roomWaypoints[0];
+    }
+
+
 }
