@@ -86,6 +86,7 @@ public class WaveManagerTMP : MonoBehaviour
 
         while (true) // Loop indefinitely for each wave
         {
+            // 🔧 Explicitly mark combat phase start
             IsBetweenWaves = false;
 
             AutoDetectSpawners();
@@ -99,6 +100,7 @@ public class WaveManagerTMP : MonoBehaviour
             // Now trigger countdown before next wave
             yield return StartCoroutine(CountdownCoroutine(waveCooldown));
         }
+
     }
 
     IEnumerator InitialCountdown(float duration)
@@ -155,7 +157,10 @@ public class WaveManagerTMP : MonoBehaviour
         if (countdownRunning) yield break;
 
         countdownRunning = true;
-        IsBetweenWaves = true;
+
+        // 🔧 Only mark between waves once enemies are really gone
+        if (!waveInProgress && activeEnemies.Count == 0)
+            IsBetweenWaves = true;
 
         Debug.Log($"CountdownCoroutine started with duration {duration} seconds.");
 
@@ -185,7 +190,11 @@ public class WaveManagerTMP : MonoBehaviour
         Debug.Log("CountdownCoroutine finished.");
         countdownRunning = false;
         IsBetweenWaves = false;
+
+        // 🔧 Removed “IsBetweenWaves = false;” here — 
+        // we now only set it false when a new wave actually starts
     }
+
 
     void StartNextWave()
     {

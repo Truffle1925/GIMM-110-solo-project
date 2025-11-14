@@ -26,6 +26,12 @@ public class HouseGenerator : MonoBehaviour
     public LayerMask wallLayerMask;
     public float doorwayClearRadius = 0.3f;
 
+    [Header("Validation Settings")]
+    [Tooltip("How many times to retry generation until all rooms are accessible.")]
+    public int maxGenerationRetries = 5;
+    public float doorwayConnectDistance = 2.0f;
+
+
     private class Doorway
     {
         public Transform transform;
@@ -39,8 +45,33 @@ public class HouseGenerator : MonoBehaviour
 
     void Start()
     {
-        GenerateHouse();
+        int attempts = 0;
+        bool valid = false;
+
+        while (!valid && attempts < maxGenerationRetries)
+        {
+            attempts++;
+            Debug.Log($"[Generation Attempt {attempts}] Starting...");
+
+            ClearPreviousGeneration();
+            GenerateHouse();
+
+            if (IsHouseFullyConnected())
+            {
+                valid = true;
+                Debug.Log($"[Generation Attempt {attempts}] ✅ House fully connected.");
+            }
+            else
+            {
+                Debug.LogWarning($"[Generation Attempt {attempts}] ❌ Disconnected sections detected. Retrying...");
+            }
+        }
+
+        if (!valid)
+            Debug.LogError($"[Generation] Failed to create a connected layout after {maxGenerationRetries} attempts.");
     }
+
+
 
     void GenerateHouse()
     {
@@ -299,4 +330,89 @@ public class HouseGenerator : MonoBehaviour
         }
         return doors.ToArray();
     }
+
+    void ClearOldGeneration()
+    {
+        // Destroy everything except this generator itself
+        for (int i = spawnedRooms.Count - 1; i >= 0; i--)
+        {
+            var room = spawnedRooms[i];
+            if (room != null && room != mainRoom.gameObject)
+                DestroyImmediate(room);
+        }
+
+        spawnedRooms.Clear();
+        roomBounds.Clear();
+        openDoorways.Clear();
+    }
+
+    void ClearPreviousGeneration()
+    {
+        foreach (var room in spawnedRooms)
+        {
+            if (room != null && room != mainRoom.gameObject)
+                DestroyImmediate(room);
+        }
+
+        spawnedRooms.Clear();
+        roomBounds.Clear();
+        openDoorways.Clear();
+    }
+    bool IsHouseFullyConnected()
+    {
+        if (spawnedRooms.Count == 0) return false;
+
+        // Build adjacency graph using doorway proximity and facing
+        Dictionary<GameObject, List<GameObject>> graph = new Dictionary<GameObject, List<GameObject>>();
+        foreach (var room in spawnedRooms)
+            graph[room] = new List<GameObject>();
+
+        foreach (var a in spawnedRooms)
+        {
+            foreach (var b in spawnedRooms)
+            {
+                if (a == b) continue;
+
+                Transform[] doorsA = GetDoorways(a);
+                Transform[] doorsB = GetDoorways(b);
+
+                foreach (var da in doorsA)
+                    foreach (var db in doorsB)
+                    {
+                        float dist = Vector3.Distance(da.position, db.position);
+                        if (dist < doorwayConnectDistance && Vector3.Dot(da.forward, -db.forward) > 0.6f)
+                        {
+                            if (!graph[a].Contains(b))
+                                graph[a].Add(b);
+                            if (!graph[b].Contains(a))
+                                graph[b].Add(a);
+                        }
+                    }
+            }
+        }
+
+        // Breadth-first search from main room
+        HashSet<GameObject> visited = new HashSet<GameObject>();
+        Queue<GameObject> queue = new Queue<GameObject>();
+        queue.Enqueue(mainRoom.gameObject);
+        visited.Add(mainRoom.gameObject);
+
+        while (queue.Count > 0)
+        {
+            GameObject current = queue.Dequeue();
+            foreach (GameObject neighbor in graph[current])
+            {
+                if (!visited.Contains(neighbor))
+                {
+                    visited.Add(neighbor);
+                    queue.Enqueue(neighbor);
+                }
+            }
+        }
+
+        // If every room is visited, the layout is fully connected
+        return visited.Count == spawnedRooms.Count;
+    }
+
+
 }

@@ -1,15 +1,24 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
-/// Handles switching between multiple weapon scripts (Shoot, ShootShotgun, MeleeAttack)
-/// on the same player using number keys (1, 2, 3) or mouse scroll.
+/// Handles switching between Glock, Shotgun, and Knife weapons
+/// and updates the player animator to match the active weapon.
 /// </summary>
 public class WeaponManager : MonoBehaviour
 {
     [Header("Weapon Components")]
-    public MonoBehaviour[] weapons; // Assign: [0]=Shoot, [1]=ShootShotgun, [2]=MeleeAttack
+    public MonoBehaviour glockWeapon;     // Assign your Shoot script
+    public MonoBehaviour shotgunWeapon;   // Assign your ShootShotgun script
+    public MonoBehaviour knifeWeapon;     // Assign your MeleeAttack script
 
-    private int selectedWeapon = 0;
+    [Header("Animation Settings")]
+    public Animator playerAnimator; // Assign your player Animator in Inspector
+    private static readonly int PlayerGlock = Animator.StringToHash("playerGlock");
+    private static readonly int PlayerShotgun = Animator.StringToHash("playerShotgun");
+    private static readonly int PlayerKnife = Animator.StringToHash("playerKnife");
+    private static readonly int MeleeAttack = Animator.StringToHash("meleeAttack");
+
+    private int selectedWeapon = 0; // 0 = Glock, 1 = Shotgun, 2 = Knife
 
     void Start()
     {
@@ -30,14 +39,14 @@ public class WeaponManager : MonoBehaviour
         if (scroll > 0f)
         {
             selectedWeapon++;
-            if (selectedWeapon >= weapons.Length)
+            if (selectedWeapon > 2)
                 selectedWeapon = 0;
         }
         else if (scroll < 0f)
         {
             selectedWeapon--;
             if (selectedWeapon < 0)
-                selectedWeapon = weapons.Length - 1;
+                selectedWeapon = 2;
         }
 
         // Number keys
@@ -52,10 +61,62 @@ public class WeaponManager : MonoBehaviour
 
     void SelectWeapon(int index)
     {
-        for (int i = 0; i < weapons.Length; i++)
+        // Disable all weapons
+        if (glockWeapon != null) glockWeapon.enabled = false;
+        if (shotgunWeapon != null) shotgunWeapon.enabled = false;
+        if (knifeWeapon != null) knifeWeapon.enabled = false;
+
+        // Enable selected weapon
+        switch (index)
         {
-            if (weapons[i] != null)
-                weapons[i].enabled = (i == index);
+            case 0:
+                if (glockWeapon != null) glockWeapon.enabled = true;
+                break;
+            case 1:
+                if (shotgunWeapon != null) shotgunWeapon.enabled = true;
+                break;
+            case 2:
+                if (knifeWeapon != null) knifeWeapon.enabled = true;
+                break;
+        }
+
+        Debug.Log("Weapon switched to index " + index);
+        UpdateAnimatorState(index);
+    }
+
+    void UpdateAnimatorState(int index)
+    {
+        if (playerAnimator == null)
+            return;
+
+        // Reset all weapon states
+        playerAnimator.SetBool(PlayerGlock, false);
+        playerAnimator.SetBool(PlayerShotgun, false);
+        playerAnimator.SetBool(PlayerKnife, false);
+
+        // Enable only the active one
+        switch (index)
+        {
+            case 0:
+                playerAnimator.SetBool(PlayerGlock, true);
+                break;
+            case 1:
+                playerAnimator.SetBool(PlayerShotgun, true);
+                break;
+            case 2:
+                playerAnimator.SetBool(PlayerKnife, true);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Called externally (e.g., by MeleeAttack script) to trigger the attack animation.
+    /// </summary>
+    public void PlayMeleeAttackAnimation()
+    {
+        if (playerAnimator != null)
+        {
+            playerAnimator.SetTrigger(MeleeAttack);
         }
     }
 }

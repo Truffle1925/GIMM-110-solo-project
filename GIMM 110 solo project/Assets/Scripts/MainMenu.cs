@@ -10,11 +10,23 @@ public class MainMenu : MonoBehaviour
         SceneManager.LoadScene("GameScene");
     }
 
+    public void OpenCredits()
+    {
+        // Replace "CreditsScene" with your actual credits scene name
+        SceneManager.LoadScene("CreditsScene");
+    }
+
     // Called when Quit button is pressed
     public void QuitGame()
     {
         Debug.Log("Quit Game");
         Application.Quit();
+    }
+
+    public void MainMenuScene()
+    {
+        // Replace "MainMenuScene" with your actual main menu scene name
+        SceneManager.LoadScene("MainMenu");
     }
 }
 

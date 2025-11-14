@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D), typeof(Animator))]
 public abstract class Character : MonoBehaviour
@@ -8,14 +8,16 @@ public abstract class Character : MonoBehaviour
     public int maxHealth = 3;
 
     [Header("Animation Settings")]
-    public string moveXParam = "MoveX";  // Animator parameter names
+    public string moveXParam = "MoveX";
     public string moveYParam = "MoveY";
     public string speedParam = "Speed";
+    public float moveThreshold = 0.05f;
 
     protected Rigidbody2D rb;
     protected Animator animator;
     protected int currentHealth;
     protected bool isDashing = false;
+    protected bool isMoving = false;
 
     protected virtual void Awake()
     {
@@ -42,19 +44,27 @@ public abstract class Character : MonoBehaviour
     }
 
     /// <summary>
-    /// Updates the animator blend values based on facing direction and movement vector.
+    /// Updates animation parameters based on Rigidbody2D velocity.
     /// </summary>
-    protected void UpdateAnimation(Vector2 moveInput, Vector2 facingDir)
+    protected void UpdateAnimationFromVelocity()
     {
-        if (animator == null) return;
+        if (!animator || !rb) return;
 
-        // Convert movement into local space relative to facing direction
-        float moveRight = Vector2.Dot(moveInput.normalized, facingDir);                  // Forward/back
-        float moveUp = Vector2.Dot(moveInput.normalized, new Vector2(-facingDir.y, facingDir.x)); // Sideways
+        Vector2 vel = rb.linearVelocity;
+        float speed = vel.magnitude;
+        isMoving = speed > moveThreshold;
 
-        // Set animator parameters
-        animator.SetFloat(moveXParam, moveRight);
-        animator.SetFloat(moveYParam, moveUp);
-        animator.SetFloat(speedParam, moveInput.sqrMagnitude);
+        animator.SetBool("isMoving", isMoving); // ✅ Used for Move/Idle transitions
+        animator.SetFloat(speedParam, speed);
+
+        if (isMoving)
+        {
+            Vector2 dir = vel.normalized;
+            animator.SetFloat(moveXParam, dir.x);
+            animator.SetFloat(moveYParam, dir.y);
+        }
+
+        // ✅ Debug movement info
+        Debug.Log($"[Character] Speed: {speed:F2} | isMoving: {isMoving} | Velocity: {vel}");
     }
 }

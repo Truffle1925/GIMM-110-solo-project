@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,15 +6,12 @@ using UnityEngine;
 /// Enemy AI with FSM for waypoint pathfinding and player chasing.
 /// Waypoint state handles navigation between rooms.
 /// Chasing state handles movement, dodging, and attacks.
+/// Adds leg animation handling similar to Player.
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D), typeof(Animator))]
 public class Enemy : Character
 {
-    public enum EnemyState
-    {
-        WaypointPathfinding,
-        PlayerChasing
-    }
+    public enum EnemyState { WaypointPathfinding, PlayerChasing }
 
     [Header("FSM")]
     public EnemyState currentState = EnemyState.WaypointPathfinding;
@@ -28,6 +25,10 @@ public class Enemy : Character
     public float bulletSpeed = 12f;
     public float minShootCooldown = 0.5f;
     public float maxShootCooldown = 1.5f;
+
+    [Header("Sound")]
+    public AudioClip shootSound;
+    public AudioSource audioSource;
 
     [Header("Movement")]
     public float strafeSpeed = 3f;
@@ -75,13 +76,23 @@ public class Enemy : Character
 
     public WaveManagerTMP waveManager;
 
+    [Header("Leg Animation")]
+    public Transform legs;
+    public Animator legAnimator;
+    private Vector2 lastMoveDir;
+
     protected override void Awake()
     {
         base.Awake();
         shootTimer = Random.Range(minShootCooldown, maxShootCooldown);
-
         waypointManager = FindObjectOfType<WaypointManager>();
         styleManager = FindObjectOfType<StyleManager>();
+
+        if (!legAnimator && legs != null)
+            legAnimator = legs.GetComponent<Animator>();
+
+        if (!audioSource)
+            audioSource = GetComponent<AudioSource>();
     }
 
     protected virtual void Start()
@@ -105,14 +116,41 @@ public class Enemy : Character
             case EnemyState.WaypointPathfinding:
                 WaypointPathfindingUpdate();
                 break;
-
             case EnemyState.PlayerChasing:
                 PlayerChasingUpdate();
                 break;
         }
+
+        // Update top-body animator if any (from Character)
+        UpdateAnimationFromVelocity();
     }
 
-    // --- FSM State Control ---
+    private void FixedUpdate()
+    {
+        HandleLegsAnimation();
+    }
+
+    private void HandleLegsAnimation()
+    {
+        if (!legs || !legAnimator) return;
+
+        float speed = rb.linearVelocity.magnitude;
+        bool legsMoving = speed > 0.05f;
+
+        legAnimator.SetBool("isMoving", legsMoving);
+        legAnimator.SetFloat("Speed", speed);
+
+        if (legsMoving)
+        {
+            Vector2 moveDir = rb.linearVelocity.normalized;
+            lastMoveDir = moveDir;
+            float angle = Mathf.Atan2(moveDir.y, moveDir.x) * Mathf.Rad2Deg - 90f;
+            legs.rotation = Quaternion.Euler(0, 0, angle);
+        }
+
+        Debug.Log($"[Enemy Legs] Speed: {speed:F2}, Moving: {legsMoving}, LastDir: {lastMoveDir}, Angle: {legs.rotation.eulerAngles.z:F1}");
+    }
+
     void UpdateState()
     {
         bool inSameRoom = PlayerInSameRoom();
@@ -134,7 +172,6 @@ public class Enemy : Character
         Debug.Log($"{name} switched to state: {currentState}");
     }
 
-    // --- Waypoint Pathfinding State ---
     void WaypointPathfindingUpdate()
     {
         pathRefreshTimer -= Time.deltaTime;
@@ -159,7 +196,6 @@ public class Enemy : Character
             Debug.LogWarning("Player room not found; using closest waypoint to player position.");
         }
 
-        // Only rebuild path if room changed
         if (playerRoom != lastKnownPlayerRoom)
         {
             GameObject startWP = waypointManager.GetClosestWaypoint(transform.position);
@@ -186,15 +222,22 @@ public class Enemy : Character
 
         GameObject targetWaypoint = currentPath[pathIndex];
         Vector2 dir = (targetWaypoint.transform.position - transform.position).normalized;
-
-        // Move the enemy
         rb.MovePosition(rb.position + dir * moveSpeed * baseMoveSpeedMultiplier * Time.deltaTime);
 
-        // Face the movement direction
         if (dir.sqrMagnitude > 0.0001f)
             transform.up = dir;
 
-        // Check if waypoint reached
+        if (legAnimator != null)
+        {
+            legAnimator.SetBool("isMoving", true);
+            legAnimator.SetFloat("Speed", moveSpeed * baseMoveSpeedMultiplier);
+            lastMoveDir = dir;
+
+            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f;
+            if (legs != null)
+                legs.rotation = Quaternion.Euler(0, 0, angle);
+        }
+
         float dist = Vector2.Distance(transform.position, targetWaypoint.transform.position);
         if (dist < 0.2f)
         {
@@ -203,7 +246,6 @@ public class Enemy : Character
                 BuildPathToPlayerRoom();
         }
     }
-
 
     List<GameObject> FindPathBFS(GameObject start, GameObject goal)
     {
@@ -253,7 +295,6 @@ public class Enemy : Character
         return path;
     }
 
-    // --- Player Chasing State ---
     void PlayerChasingUpdate()
     {
         MoveAggressively();
@@ -263,7 +304,6 @@ public class Enemy : Character
             StartCoroutine(Dash());
     }
 
-    // --- Aggressive Movement ---
     protected virtual void MoveAggressively()
     {
         Vector2 toPlayer = (player.position - transform.position);
@@ -305,7 +345,6 @@ public class Enemy : Character
         transform.up = dirToPlayer;
     }
 
-    // --- Attack Handling ---
     protected virtual void HandleAttack()
     {
         shootTimer -= Time.deltaTime;
@@ -325,6 +364,16 @@ public class Enemy : Character
         bullet.transform.up = shootDir;
         Rigidbody2D bulletRb = bullet.GetComponent<Rigidbody2D>();
         if (bulletRb) bulletRb.linearVelocity = shootDir * bulletSpeed;
+
+        // 🔊 Call the new sound method when firing
+        PlayShootSound();
+    }
+
+    // --- NEW METHOD ---
+    protected virtual void PlayShootSound()
+    {
+        if (audioSource && shootSound)
+            audioSource.PlayOneShot(shootSound);
     }
 
     protected virtual IEnumerator Dash()
@@ -347,7 +396,6 @@ public class Enemy : Character
         return hit.collider.CompareTag("Player");
     }
 
-    // --- Death + Drop ---
     protected override void Die()
     {
         if (Random.value < dropChance)
@@ -406,7 +454,6 @@ public class Enemy : Character
         return currentRoom == currentPlayerRoom.gameObject;
     }
 
-    // --- Gizmos ---
     private void OnDrawGizmos()
     {
         Gizmos.color = currentState == EnemyState.WaypointPathfinding ? Color.yellow : Color.red;
